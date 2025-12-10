@@ -1,4 +1,13 @@
 {
+  "name": "your-app-name",
+  "version": "0.1.0",
+  // 
+  "homepage": "https://sjokstudio.github.io/sjok-2025/",
+  "private": true,
+  "dependencies": {
+    ...
+  }
+}
   "name": "sjok-studio-2025",
   "private": true,
   "version": "0.0.0",
