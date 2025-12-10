@@ -3,24 +3,38 @@ import React, { useEffect, useRef } from 'react';
 interface VisualizerProps {
   audioUrl: string | null;
   isPlaying: boolean;
+  onAudioEnded?: () => void;
 }
 
-const Visualizer: React.FC<VisualizerProps> = ({ audioUrl, isPlaying }) => {
+const Visualizer: React.FC<VisualizerProps> = ({ audioUrl, isPlaying, onAudioEnded }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Fix: Initialize useRef with null to satisfy TypeScript requirements
   const animationFrameRef = useRef<number | null>(null);
+  const onEndedRef = useRef(onAudioEnded);
+
+  // Keep ref updated to avoid re-running the main effect when the callback changes
+  useEffect(() => {
+    onEndedRef.current = onAudioEnded;
+  }, [onAudioEnded]);
 
   useEffect(() => {
     if (!audioUrl) return;
 
-    // Create a new Audio element for each new URL to avoid SourceNode reuse conflicts
+    // Create a new Audio element for each new URL
     const audio = new Audio(audioUrl);
-    audio.loop = true;
+    // audio.loop = true; // Removed loop to allow natural ending for state sync
     audio.crossOrigin = "anonymous";
     audioRef.current = audio;
+
+    // Handle audio ending
+    const handleEnded = () => {
+      if (onEndedRef.current) {
+        onEndedRef.current();
+      }
+    };
+    audio.addEventListener('ended', handleEnded);
 
     // Initialize Audio Context
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -40,8 +54,9 @@ const Visualizer: React.FC<VisualizerProps> = ({ audioUrl, isPlaying }) => {
       console.error("Audio Source creation failed:", e);
     }
 
-    // Cleanup function: stop audio, close context
+    // Cleanup function
     return () => {
+      audio.removeEventListener('ended', handleEnded);
       audio.pause();
       audio.src = "";
       audio.load();
@@ -102,9 +117,9 @@ const Visualizer: React.FC<VisualizerProps> = ({ audioUrl, isPlaying }) => {
         ctx.fillStyle = gradient;
         
         ctx.beginPath();
-        // Check if roundRect is supported, otherwise fallback to rect
-        if (typeof ctx.roundRect === 'function') {
-           ctx.roundRect(x, canvas.height - barHeight, barWidth, barHeight, [2, 2, 0, 0]);
+        // Safe cast for TypeScript environments that might not have roundRect definition yet
+        if (typeof (ctx as any).roundRect === 'function') {
+           (ctx as any).roundRect(x, canvas.height - barHeight, barWidth, barHeight, [2, 2, 0, 0]);
         } else {
            ctx.rect(x, canvas.height - barHeight, barWidth, barHeight);
         }

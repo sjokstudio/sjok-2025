@@ -159,7 +159,11 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm space-y-6">
-                   <Visualizer audioUrl={fileData.url} isPlaying={isPlaying} />
+                   <Visualizer 
+                      audioUrl={fileData.url} 
+                      isPlaying={isPlaying} 
+                      onAudioEnded={() => setIsPlaying(false)}
+                   />
                    
                    <div className="flex justify-center">
                      {status === AnalysisStatus.COMPLETED && (
